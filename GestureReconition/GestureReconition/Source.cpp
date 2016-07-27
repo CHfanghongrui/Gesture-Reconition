@@ -62,7 +62,13 @@ int main(int argc, char** argv)
 
 	printf("Gesture Reconition Start\n");
 
+	double eTimeCost = 0;
+	eTimeCost = (double)getTickCount();
+
 	GestureReconition(tCfg, tSrcTest, tData);
+
+	eTimeCost = ((double)getTickCount() - eTimeCost) / getTickFrequency();
+	printf("Gesture Reconition's Time Cost is %.3f sec\n", eTimeCost);
 
 	printf("There are %d fingers\n", tData.lFingerNum);
 	printf("Gesture Reconition End\n");

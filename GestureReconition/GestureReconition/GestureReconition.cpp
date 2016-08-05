@@ -1,8 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <highgui.h>
-#include <cxcore.h>
 #include <vector>
 #include <algorithm>
 #include <math.h>       /* acos */
@@ -18,12 +15,8 @@ using namespace cv;
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/legacy/legacy.hpp"
 
-
-
 BackgroundSubtractorMOG g_BG_Model(200, 5, 0.7, 10);
 RNG rng(12345);
-
-
 
 Mat ForegroundDetect(Mat a_tImgIn, bool a_bBG_Update, BackgroundSubtractorMOG a_CBG_Model)
 {

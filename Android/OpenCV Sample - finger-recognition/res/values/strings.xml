@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OCV Finger Recognition</string>
+    
+    <string name="btn_sw">Switch</string>
+    <string name="btn_orig">Original</string>
+    <string name="btn_foreground">Foreground</string>
+    <string name="btn_polygon_contour">Polygon &amp; Contour</string>
+    <string name="btn_result">Result</string>
+    
+</resources>

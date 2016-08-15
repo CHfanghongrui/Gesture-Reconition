@@ -1,0 +1,85 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+	
+    <FrameLayout
+        android:id="@+id/fl_camera"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:clipChildren="true" >
+        
+        <!-- <org.opencv.samples.fingerrecognition.OrientateCameraView
+        	android:layout_width="match_parent"
+        	android:layout_height="match_parent"
+        	android:visibility="gone"
+        	android:id="@+id/fd_activity_surface_view" /> -->
+        	
+        <org.opencv.android.JavaCameraView
+        	android:layout_width="match_parent"
+        	android:layout_height="match_parent"
+        	android:visibility="gone"
+        	android:id="@+id/fd_activity_surface_view" />
+        
+    </FrameLayout>
+    
+    <LinearLayout
+        android:id="@+id/ll_tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#ffffff"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/fl_camera"
+        android:gravity="center_vertical" >
+        
+        <Button
+            android:id="@+id/btn_sw"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_sw" />
+        
+        <Button
+            android:id="@+id/btn_orig"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_orig" />
+        
+        <Button
+            android:id="@+id/btn_foreground"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_foreground" />
+        
+        <Button
+            android:id="@+id/btn_polygon_contour"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_polygon_contour" />
+        
+        <Button
+            android:id="@+id/btn_result"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_result" />
+        
+        <TextView
+            android:id="@+id/tv_version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp" 
+            android:layout_marginRight="10dp"/>
+        
+    </LinearLayout>
+    
+</RelativeLayout>

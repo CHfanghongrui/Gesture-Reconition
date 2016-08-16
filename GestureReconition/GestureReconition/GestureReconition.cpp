@@ -9,16 +9,21 @@
 using namespace std;
 using namespace cv;
 
-#include "opencv2/core/core.hpp"
-#include "opencv2/video/background_segm.hpp"
-#include "opencv2/imgproc/imgproc_c.h"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/legacy/legacy.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/video/background_segm.hpp>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/legacy/legacy.hpp>
+
+
 
 BackgroundSubtractorMOG g_BG_Model(200, 5, 0.7, 10);
+BackgroundSubtractorMOG2 g_BG_Model_2(20, 16, false);
+
+
 RNG rng(12345);
 
-Mat ForegroundDetect(Mat a_tImgIn, bool a_bBG_Update, BackgroundSubtractorMOG a_CBG_Model)
+Mat ForegroundDetect(Mat a_tImgIn, bool a_bUseBackground, bool a_bBG_Update, double a_eLearnRate, BackgroundSubtractorMOG2 a_CBG_Model)
 {
 	Mat tHSVImg, tSkinImg, tFG_Mask, tForeground;
 	Scalar SkinBoundLow = Scalar(0, 58, 20);
@@ -34,19 +39,45 @@ Mat ForegroundDetect(Mat a_tImgIn, bool a_bBG_Update, BackgroundSubtractorMOG a_
 	dilate(tSkinImg, tSkinImg, Mat(), Point(-1, -1), 3);
 	erode(tSkinImg, tSkinImg, Mat(), Point(-1, -1), 3);
 
-#if 0
-	//update the model  (計算前景圖 tFG_Mask為二值化圖 第三個參數為學習率 設0則為背景相減)
-	if (a_bBG_Update)
-	{
-		a_CBG_Model(a_tImgIn, tFG_Mask, 0.005);
-	}
-	else
-	{
-		a_CBG_Model(a_tImgIn, tFG_Mask, 0);
-	}
-#endif
 
-	tForeground = tSkinImg.clone(); // for test
+	if (a_bUseBackground)
+	{	// use the model
+		//update the model  (計算前景圖 tFG_Mask為二值化圖 第三個參數為學習率 設0則為背景相減)
+		if (a_bBG_Update)
+		{
+			g_BG_Model_2(a_tImgIn, tFG_Mask, a_eLearnRate);	// 最後一個參數給0代表不再更新背景 給負數代表給opencv自行決定學習率
+		}
+		else
+		{
+			g_BG_Model_2(a_tImgIn, tFG_Mask, 0);	// 最後一個參數給0代表不再更新背景 給負數代表給opencv自行決定學習率
+		}
+
+#if 1	//對高斯前景對形態學補償
+		erode(tFG_Mask, tFG_Mask, Mat(), Point(-1, -1), 3);
+		dilate(tFG_Mask, tFG_Mask, Mat(), Point(-1, -1), 3);
+#endif
+	}
+
+
+
+	tForeground = tSkinImg.clone();
+
+	if (a_bUseBackground)
+	{	// use the model
+		for (int y = 0; y < tForeground.rows; y++)
+		{
+			for (int x = 0; x < tForeground.cols; x++)
+			{
+				if (tForeground.at<uchar>(y, x))
+				{	// 膚色對
+					if (tFG_Mask.at<uchar>(y, x) == 0)
+					{	// 非高斯前景
+						tForeground.at<uchar>(y, x) = 0;
+					}
+				}
+			}
+		}
+	}
 
 	return tForeground;
 }
@@ -134,8 +165,6 @@ vector<Point> MergeHull(vector<Point > a_vtHull)
 	return vtMergeHull;
 }
 
-
-
 int GetFingerNum(vector<GestureNode> a_vtNodeList)
 {
 	int lFingerNum = 0;
@@ -205,10 +234,10 @@ void FingerNumCal(Mat a_tSrc, const GestureReconition_Cfg a_tCfg, GestureReconit
 #endif
 
 	// coordinate type hull
-	vector<vector<Point> >hull(lGlobalSize);
+	vector<vector<Point> > hull(lGlobalSize);
 
 	// Int type hull  
-	vector<vector<int>> hullsI(lGlobalSize);
+	vector<vector<int> > hullsI(lGlobalSize);
 
 	// Convexity Local defects  
 	vector<Vec4i > DefectsLocal;
@@ -234,6 +263,10 @@ void FingerNumCal(Mat a_tSrc, const GestureReconition_Cfg a_tCfg, GestureReconit
 		// find int type hull (output is the index of contours)
 		convexHull(Mat(contours[i]), hullsI[i], false);
 	}
+	if (lMaxContoursId >= hull.size()) {
+		// 找不到特徵點，直接返回 (C.C.C.)
+		return;
+	}
 
 #if DEBUG_LOG_IMG> 0
 	lLocalSize = hull[lMaxContoursId].size();
@@ -247,6 +280,11 @@ void FingerNumCal(Mat a_tSrc, const GestureReconition_Cfg a_tCfg, GestureReconit
 	}
 	imwrite("./Hull.png", tHull);
 #endif
+
+	if (hull[lMaxContoursId].size() <= 2) {
+		// 端點數過少，無法尋找凹點，直接返回 (C.C.C.)
+		return;
+	}
 
 	// merge Hull's points which is too close
 	vtMergeHull = MergeHull(hull[lMaxContoursId]);
@@ -273,6 +311,11 @@ void FingerNumCal(Mat a_tSrc, const GestureReconition_Cfg a_tCfg, GestureReconit
 	// Draw contours + hull results
 	drawContours(tFinger, contours, lMaxContoursId, color3, 1, 8, vector<Vec4i>(), 0, Point());
 	drawContours(tFinger, hull, lMaxContoursId, color4, 1, 8, vector<Vec4i>(), 0, Point());
+
+  if (vtMergeHullId.size() <= 2) {
+		// 端點數過少，無法尋找凹點，直接返回 (C.C.C.)
+		return;
+	}
 
 	// get convexity Defects Local  
 	convexityDefects(Mat(contours[lMaxContoursId]), vtMergeHullId, DefectsLocal);
@@ -345,12 +388,12 @@ void FingerNumCal(Mat a_tSrc, const GestureReconition_Cfg a_tCfg, GestureReconit
 
 
 
-void GestureReconition(const GestureReconition_Cfg a_tCfg, const Mat a_tSrc, GestureReconition_Data &a_tData)
+void GestureReconition(const GestureReconition_Cfg a_tCfg, const Mat a_tSrc, GestureReconition_Data &a_tData, bool a_bUseBackground, bool a_bLearn, double a_eLearnRate)
 {
 	Mat tForeground, tResize;
 	Mat tSrcBuffer = a_tSrc.clone();
 
-	tForeground = ForegroundDetect(tSrcBuffer, false, g_BG_Model);
+	tForeground = ForegroundDetect(tSrcBuffer, a_bUseBackground, a_bLearn, a_eLearnRate, g_BG_Model_2);
 #if DEBUG_LOG_IMG > 0
 	imwrite("./Foreground.png", tForeground);
 #endif

@@ -6,9 +6,11 @@
 #include <opencv/cv.h>
 #include "opencv2/highgui/highgui.hpp"
 #include "GestureReconition.h"
-
+#include "opencv2/video/background_segm.hpp"
 using namespace std;
 using namespace cv;
+
+BackgroundSubtractorMOG2 g_BG_Model_2_Test(20, 16, true);
 
 
 int testInsert()
@@ -44,6 +46,8 @@ int testInsert()
 
 int main(int argc, char** argv)
 {
+
+#if 1 // 手勢辨識 流程
 	GestureReconition_Cfg tCfg;
 	GestureReconition_Data tData;
 
@@ -65,14 +69,33 @@ int main(int argc, char** argv)
 	double eTimeCost = 0;
 	eTimeCost = (double)getTickCount();
 
-	GestureReconition(tCfg, tSrcTest, tData);
+	GestureReconition(tCfg, tSrcTest, tData, false, false, 0);
 
 	eTimeCost = ((double)getTickCount() - eTimeCost) / getTickFrequency();
 	printf("Gesture Reconition's Time Cost is %.3f sec\n", eTimeCost);
 
 	printf("There are %d fingers\n", tData.lFingerNum);
 	printf("Gesture Reconition End\n");
+#else	// 測試高斯背景模型
+	VideoCapture video("in.avi");
+	Mat frame, mask, thresholdImage, output;
+	int frameNum = 0;
 
+	while (true) {
+		video >> frame;
+
+		if (frame.empty())
+		{
+			printf("The frame is empty >> end of video\n");
+			break;
+		}
+		++frameNum;
+		g_BG_Model_2_Test(frame, mask, 0.001);	// 最後一個參數給0代表不再更新背景 給負數代表給opencv自行決定學習率
+		cout << frameNum << endl;
+		imshow("mask",mask);  
+		waitKey(10);  
+	}
+#endif
 	system("PAUSE");
 	return 0;
 }

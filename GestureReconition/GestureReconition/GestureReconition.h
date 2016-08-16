@@ -69,4 +69,4 @@ typedef struct
 void GR_LoadDefaultCfg(GestureReconition_Cfg &a_tCfg);
 
 /** \brief Gesture Reconition */
-void GestureReconition(const GestureReconition_Cfg a_tCfg, const Mat a_tSrc, GestureReconition_Data &a_tData);
+void GestureReconition(const GestureReconition_Cfg a_tCfg, const Mat a_tSrc, GestureReconition_Data &a_tData, bool a_bUseBackground, bool a_bLearn, double a_eLearnRate);
